@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,13 +22,14 @@ import (
 var _ runn.Capturer = (*cRunbook)(nil)
 
 type cRunbook struct {
-	dir           string
-	currentTrails runn.Trails
-	errs          error
-	runbooks      sync.Map
-	loadDesc      bool
-	desc          string
-	runners       map[string]any
+	dir             string
+	currentBookPath string
+	currentTrails   runn.Trails
+	errs            error
+	runbooks        sync.Map
+	loadDesc        bool
+	desc            string
+	runners         map[string]any
 }
 
 type runbook struct {
@@ -65,6 +67,7 @@ func Runbook(dir string, opts ...RunbookOption) *cRunbook {
 
 func (c *cRunbook) CaptureStart(trs runn.Trails, bookPath, desc string) {
 	if _, err := os.Stat(bookPath); err == nil {
+		c.currentBookPath = bookPath
 		func() {
 			b, err := os.ReadFile(bookPath)
 			if err != nil {
@@ -311,7 +314,7 @@ func (c *cRunbook) CaptureGRPCEnd(name string, typ runn.GRPCType, service, metho
 		return
 	}
 	step := r.latestStep()
-	step = append(step, yaml.MapItem{Key: "test", Value: fmt.Sprintf("%s\n", strings.Join(r.currentGRPCTestCond, "\n&& "))})
+	step = append(step, yaml.MapItem{Key: "/test", Value: fmt.Sprintf("%s\n", strings.Join(r.currentGRPCTestCond, "\n&& "))})
 	r.replaceLatestStep(step)
 	r.currentGRPCTestCond = nil
 	r.currentGRPCResponceIndex = 0
@@ -323,8 +326,17 @@ func (c *cRunbook) CaptureCDPStart(name string) {
 func (c *cRunbook) CaptureCDPAction(a runn.CDPAction) {
 	// FIXME: not implemented
 }
-func (c *cRunbook) CaptureCDPResponse(a runn.CDPAction, res map[string]any) {
-	// FIXME: not implemented
+func (c *cRunbook) CaptureCDPResponse(a runn.CDPAction, index int, res map[string]any) {
+	if a.Fn == "screenshot" {
+		for _, v := range res {
+			if vBytes, ok := v.([]byte); ok {
+				fileName := filepath.Join(c.dir, fmt.Sprintf("%s-%d-current.png", capturedFilename(c.currentBookPath), index))
+				ioutil.WriteFile(fileName, vBytes, 0644)
+			}
+		}
+	} else {
+		// FIXME: not implemented
+	}
 }
 func (c *cRunbook) CaptureCDPEnd(name string) {
 	// FIXME: not implemented
