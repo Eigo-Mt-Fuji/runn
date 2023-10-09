@@ -27,7 +27,7 @@ type Capturer interface {
 
 	CaptureCDPStart(name string)
 	CaptureCDPAction(a CDPAction)
-	CaptureCDPResponse(a CDPAction, res map[string]any)
+	CaptureCDPResponse(a CDPAction, index int, res map[string]any)
 	CaptureCDPEnd(name string)
 
 	CaptureSSHCommand(command string)
@@ -143,9 +143,9 @@ func (cs capturers) captureCDPAction(a CDPAction) { //nostyle:recvtype
 	}
 }
 
-func (cs capturers) captureCDPResponse(a CDPAction, res map[string]any) { //nostyle:recvtype
+func (cs capturers) captureCDPResponse(a CDPAction, index int, res map[string]any) { //nostyle:recvtype
 	for _, c := range cs {
-		c.CaptureCDPResponse(a, res)
+		c.CaptureCDPResponse(a, index, res)
 	}
 }
 

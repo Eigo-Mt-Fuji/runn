@@ -150,7 +150,7 @@ func (rnr *cdpRunner) Run(_ context.Context, cas CDPActions) error {
 					res[arg.Key] = vv
 				}
 			}
-			rnr.operator.capturers.captureCDPResponse(ca, res)
+			rnr.operator.capturers.captureCDPResponse(ca, i, res)
 		}
 	}
 
